@@ -23,7 +23,7 @@ def set_plot(ax = None, figure = None, lim = [-2, 2]):
         figure = plt.figure(figsize=(8,8))
     if ax == None:
         ax = plt.axes(projection='3d')
-    ax.set_title('camera reference')
+    #ax.set_title('camera reference')
     ax.set_xlim(lim)
     ax.set_xlabel('x axis')
     ax.set_ylim(lim)
@@ -336,8 +336,8 @@ class MainWindow(QMainWindow):
         self.ccd[1]     = float(data[3])
         self.dist_foc   = float(data[4])
         self.stheta     = float(data[5])
-        # Falta completar
         self.update_canvas()
+        [i.clear() for i in line_edits]
         return 
 
     def update_world(self,line_edits):
@@ -365,6 +365,7 @@ class MainWindow(QMainWindow):
         M = T @ R
         self.camera = np.dot(M, self.camera)
         self.update_canvas()
+        [i.clear() for i in line_edits]
         return
 
     def update_cam(self,line_edits):
@@ -392,6 +393,7 @@ class MainWindow(QMainWindow):
         M = T @ R   # Foi escolhida esta ordem de acontecimentos.
         self.camera = np.dot(M, self.camera)
         self.update_canvas()
+        [i.clear() for i in line_edits]
         return 
     
     def projection_2d(self):
@@ -421,7 +423,7 @@ class MainWindow(QMainWindow):
         obj_2d = self.projection_2d()
         self.ax1.clear()
         self.ax1.set_xlim([0, self.px_base])
-        self.ax2.set_ylim([self.px_altura, 0])
+        self.ax1.set_ylim([self.px_altura, 0])
         self.ax1.plot(obj_2d[0, :], obj_2d[1, :])
         self.ax1.grid(True)
         self.ax1.set_aspect('equal')
