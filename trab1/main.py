@@ -76,13 +76,13 @@ class MainWindow(QMainWindow):
     def set_variables(self):
         self.objeto = get_obj_stl('donkey_kong.STL')
         self.camera = [] #modificar
-        self.px_base = 1280  #modificar
-        self.px_altura = 720 #modificar
-        self.dist_foc = 50 #modificar
-        self.stheta = 0 #modificar
-        self.ox = self.px_base/2 #modificar
-        self.oy = self.px_altura/2 #modificar
-        self.ccd = [36,24] #modificar
+        self.px_base = 1280  
+        self.px_altura = 720 
+        self.dist_foc = 50 
+        self.stheta = 0 
+        self.ox = self.px_base/2 
+        self.oy = self.px_altura/2 
+        self.ccd = [36,24]
         self.projection_matrix = [] #modificar
 
     def setup_ui(self):
@@ -290,7 +290,6 @@ class MainWindow(QMainWindow):
                 value = float(line_edits[i].text())
                 data[i] = value
             except: None   
-        print(data)
         self.px_base    = float(data[0])
         self.px_altura  = float(data[2])
         self.ccd[0]     = float(data[4])
@@ -363,6 +362,7 @@ class MainWindow(QMainWindow):
         return 
     
     def reset_canvas(self):
+        self.set_variables()
         return
     
 if __name__ == '__main__':
