@@ -18,6 +18,17 @@ def get_obj_stl(obj): # recebe o arquivo STL para a elaboração do vetor obj
     z = your_mesh.z.flatten()
     return np.array([x.T,y.T,z.T,np.ones(x.size)])
 
+def draw_arrows(point,base,axis,length=1.5):
+    # The object base is a matrix, where each column represents the vector
+    # of one of the axis, written in homogeneous coordinates (ax,ay,az,0)
+    # Plot vector of x-axis
+    axis.quiver(point[0],point[1],point[2],base[0,0],base[1,0],base[2,0],color='red',pivot='tail',  length=length)
+    # Plot vector of y-axis
+    axis.quiver(point[0],point[1],point[2],base[0,1],base[1,1],base[2,1],color='green',pivot='tail',  length=length)
+    # Plot vector of z-axis
+    axis.quiver(point[0],point[1],point[2],base[0,2],base[1,2],base[2,2],color='blue',pivot='tail',  length=length)
+    return axis
+
 def world_translation(x, y, z): 
     translate_matrix = np.eye(4)
     translate_matrix[0, -1] = x
@@ -28,11 +39,11 @@ def world_translation(x, y, z):
 def world_rotation(eixo, theta): # eixo = [x, y, z] ; theta em graus.
     theta = theta*np.pi/180 #
     if   eixo == 'x':
-      rotation_matrix=np.array([[1,0,0,0],[0, cos(theta),-sin(theta),0],[0, sin(theta), cos(theta),0],[0,0,0,1]])
+      rotation_matrix=np.array([[1,0,0,0],[0, np.cos(theta),-np.sin(theta),0],[0, np.sin(theta), np.cos(theta),0],[0,0,0,1]])
     elif eixo == 'y':
-      rotation_matrix=np.array([[cos(theta),0, sin(theta),0],[0,1,0,0],[-sin(theta), 0, cos(theta),0],[0,0,0,1]])
+      rotation_matrix=np.array([[np.cos(theta),0, np.sin(theta),0],[0,1,0,0],[-np.sin(theta), 0, np.cos(theta),0],[0,0,0,1]])
     elif eixo == 'z':
-      rotation_matrix=np.array([[cos(theta),-sin(theta),0,0],[sin(theta),cos(theta),0,0],[0,0,1,0],[0,0,0,1]])
+      rotation_matrix=np.array([[np.cos(theta),-np.sin(theta),0,0],[np.sin(theta),np.cos(theta),0,0],[0,0,1,0],[0,0,0,1]])
     else:
       print('Eixo inexistente ou incorreto.')
     return rotation_matrix
@@ -75,7 +86,16 @@ class MainWindow(QMainWindow):
 
     def set_variables(self):
         self.objeto = get_obj_stl('donkey_kong.STL')
-        self.camera = [] #modificar
+        
+        # base vector values
+        e1 = np.array([[1],[0],[0],[0]]) # X
+        e2 = np.array([[0],[1],[0],[0]]) # Y
+        e3 = np.array([[0],[0],[1],[0]]) # Z
+        base = np.hstack((e1,e2,e3))
+        #origin point
+        point =np.array([[0],[0],[0],[1]])
+        self.camera = np.hstack((base,point))
+
         self.px_base = 1280  
         self.px_altura = 720 
         self.dist_foc = 50 
@@ -270,10 +290,15 @@ class MainWindow(QMainWindow):
         # Criar um objeto FigureCanvas para exibir o gráfico 3D
         self.fig2 = plt.figure()
         self.ax2 = self.fig2.add_subplot(111, projection='3d')
-        self.ax2.plot(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b' )
+        ##################################
+        
+        ##################################
         
         ##### Falta plotar o seu objeto 3D e os referenciais da câmera e do mundo
-        
+
+        self.ax2.plot(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b' )
+        draw_arrows(self.camera[:,-1], self.camera[:,0:3], self.ax2)
+
         self.canvas2 = FigureCanvas(self.fig2)
         canvas_layout.addWidget(self.canvas2)
 
@@ -284,17 +309,17 @@ class MainWindow(QMainWindow):
     ##### Você deverá criar as suas funções aqui
     
     def update_params_intrinsc(self, line_edits):
-        data = [self.px_base, self.ccd[1], self.px_altura, self.dist_foc, self.ccd[0], self.stheta]
+        data = [self.px_base, self.px_altura, self.ccd[0], self.ccd[1], self.dist_foc, self.stheta]
         for i in range(len(line_edits)):
             try:
                 value = float(line_edits[i].text())
                 data[i] = value
             except: None   
         self.px_base    = float(data[0])
-        self.px_altura  = float(data[2])
-        self.ccd[0]     = float(data[4])
-        self.ccd[1]     = float(data[1])
-        self.dist_foc   = float(data[3])
+        self.px_altura  = float(data[1])
+        self.ccd[0]     = float(data[2])
+        self.ccd[1]     = float(data[3])
+        self.dist_foc   = float(data[4])
         self.stheta     = float(data[5])
         # Falta completar
         return 
