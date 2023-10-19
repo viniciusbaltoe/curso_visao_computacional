@@ -284,19 +284,19 @@ class MainWindow(QMainWindow):
     ##### Você deverá criar as suas funções aqui
     
     def update_params_intrinsc(self, line_edits):
-        data = []
-        for i in line_edits:
+        data = [self.px_base, self.ccd[1], self.px_altura, self.dist_foc, self.ccd[0], self.stheta]
+        for i in range(len(line_edits)):
             try:
-                value = float(i.text())
-                data.append(value)
-            except:
-                data.append(float(0))    
-        n_pixels_base   = float(data[0])
-        n_pixels_altura = float(data[2])
-        ccd_x           = float(data[4])
-        ccd_y           = float(data[1])
-        dist_focal      = float(data[3])
-        s_theta         = float(data[5])
+                value = float(line_edits[i].text())
+                data[i] = value
+            except: None   
+        print(data)
+        self.px_base    = float(data[0])
+        self.px_altura  = float(data[2])
+        self.ccd[0]     = float(data[4])
+        self.ccd[1]     = float(data[1])
+        self.dist_foc   = float(data[3])
+        self.stheta     = float(data[5])
         # Falta completar
         return 
 
