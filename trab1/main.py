@@ -68,10 +68,8 @@ class MainWindow(QMainWindow):
         self.setup_ui()
 
     def set_variables(self):
-        self.objeto_original = get_obj_stl('donkey_kong.STL')
-        self.objeto = self.objeto_original
-        self.cam_original = [] #modificar
-        self.cam = [] #modificar
+        self.objeto = get_obj_stl('donkey_kong.STL')
+        self.camera = [] #modificar
         self.px_base = 1280  #modificar
         self.px_altura = 720 #modificar
         self.dist_foc = 50 #modificar
@@ -266,7 +264,7 @@ class MainWindow(QMainWindow):
         # Criar um objeto FigureCanvas para exibir o gráfico 3D
         self.fig2 = plt.figure()
         self.ax2 = self.fig2.add_subplot(111, projection='3d')
-        self.ax2.plot(self.objeto_original[0, :], self.objeto_original[1, :], self.objeto_original[2, :], 'b' )
+        self.ax2.plot(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b' )
         
         ##### Falta plotar o seu objeto 3D e os referenciais da câmera e do mundo
         
@@ -310,8 +308,16 @@ class MainWindow(QMainWindow):
         x_angle = float(data[1])
         y_angle = float(data[3])
         z_angle = float(data[5])
-        #T = world_translation()
-        print(x_move, y_move, z_move, x_angle)
+        
+        T = world_translation(x_move, y_move, z_move)
+
+        Rx = world_rotation('x', x_angle)
+        Ry = world_rotation('y', y_angle)
+        Rz = world_rotation('z', z_angle)
+        R = Rx @ Ry @ Rz
+        
+        M = T @ R
+        self.camera = np.dot(M, self.camera)
         return
 
     def update_cam(self,line_edits):
