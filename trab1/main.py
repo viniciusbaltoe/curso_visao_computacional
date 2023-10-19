@@ -18,6 +18,20 @@ def get_obj_stl(obj): # recebe o arquivo STL para a elaboração do vetor obj
     z = your_mesh.z.flatten()
     return np.array([x.T,y.T,z.T,np.ones(x.size)])
 
+def set_plot(ax = None, figure = None, lim = [-2, 2]):
+    if figure == None:
+        figure = plt.figure(figsize=(8,8))
+    if ax == None:
+        ax = plt.axes(projection='3d')
+    ax.set_title('camera reference')
+    ax.set_xlim(lim)
+    ax.set_xlabel('x axis')
+    ax.set_ylim(lim)
+    ax.set_ylabel('y axis')
+    ax.set_zlim(lim)
+    ax.set_zlabel('z axis')
+    return ax
+
 def draw_arrows(point,base,axis,length=1.5):
     # The object base is a matrix, where each column represents the vector
     # of one of the axis, written in homogeneous coordinates (ax,ay,az,0)
@@ -95,6 +109,7 @@ class MainWindow(QMainWindow):
         #origin point
         point =np.array([[0],[0],[0],[1]])
         self.camera = np.hstack((base,point))
+        self.referencial = self.camera
 
         self.px_base = 1280  
         self.px_altura = 720 
@@ -103,7 +118,7 @@ class MainWindow(QMainWindow):
         self.ox = self.px_base/2 
         self.oy = self.px_altura/2 
         self.ccd = [36,24]
-        self.projection_matrix = [] #modificar
+        self.projection_matrix = np.eye(3, 4)
 
     def setup_ui(self):
         # Criar o layout de grade
@@ -275,14 +290,14 @@ class MainWindow(QMainWindow):
         self.canvas1 = FigureCanvas(self.fig1)
 
         ##### Falta acertar os limites do eixo X
-        
+        self.ax1.set_xlim([0, self.px_base])
         ##### Falta acertar os limites do eixo Y
-        
+        self.ax1.set_ylim([self.px_altura, 0])
         ##### Você deverá criar a função de projeção 
-        object_2d = self.projection_2d()
+        obj_2d = self.projection_2d()
 
         ##### Falta plotar o object_2d que retornou da projeção
-          
+        self.ax1.plot(obj_2d[0, :], obj_2d[1, :])
         self.ax1.grid('True')
         self.ax1.set_aspect('equal')  
         canvas_layout.addWidget(self.canvas1)
@@ -290,12 +305,14 @@ class MainWindow(QMainWindow):
         # Criar um objeto FigureCanvas para exibir o gráfico 3D
         self.fig2 = plt.figure()
         self.ax2 = self.fig2.add_subplot(111, projection='3d')
+        self.ax2 = set_plot(ax=self.ax2, lim = [-40, 40])
         
-        ##### Falta plotar o seu objeto 3D e os referenciais da câmera e do mundo
         # Objeto
         self.ax2.plot(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b' )
         # Camera
         draw_arrows(self.camera[:,-1], self.camera[:,0:3], self.ax2)
+        # Referencial no mundo
+        draw_arrows(self.referencial[:,-1], self.referencial[:,0:3], self.ax2)
 
         self.canvas2 = FigureCanvas(self.fig2)
         canvas_layout.addWidget(self.canvas2)
@@ -378,12 +395,16 @@ class MainWindow(QMainWindow):
         return 
     
     def projection_2d(self):
-        ## EDITAR
-
-        return 
+        Cam_inv = np.linalg.inv(self.camera)
+        MPI = self.generate_intrinsic_params_matrix()
+        obj_2d = MPI @ self.projection_matrix @ Cam_inv @ self.objeto
+        obj_2d[0, :] = obj_2d[0, :] / obj_2d[2, :]
+        obj_2d[1, :] = obj_2d[1, :] / obj_2d[2, :]
+        obj_2d[2, :] = obj_2d[2, :] / obj_2d[2, :]
+        return obj_2d
     
     def generate_intrinsic_params_matrix(self):
-        fs_x = self.px_base * self.dist_foc / self.cdd[0]
+        fs_x = self.px_base * self.dist_foc / self.ccd[0]
         fs_y = self.px_altura * self.dist_foc / self.ccd[1]
         fs_theta = self.stheta * self.dist_foc
         ox = self.px_base / 2
@@ -393,14 +414,32 @@ class MainWindow(QMainWindow):
                      [   0,        0,  1]])
         return MPI
     
-
     def update_canvas(self):
         plt.close('all')
+        
+        # Parte 2D
+        obj_2d = self.projection_2d()
+        self.ax1.clear()
+        self.ax1.set_xlim([0, self.px_base])
+        self.ax2.set_ylim([self.px_altura, 0])
+        self.ax1.plot(obj_2d[0, :], obj_2d[1, :])
+        self.ax1.grid(True)
+        self.ax1.set_aspect('equal')
 
+        # Parte 3D
+        self.ax2.clear()
+        self.ax2 = set_plot(ax=self.ax2, lim=[-40, 40])
+        self.ax2.plot3D(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b')
+        draw_arrows(self.camera[:,-1], self.camera[:,0:3], self.ax2)
+
+        self.canvas1.draw()
+        self.canvas2.draw()
+        self.canvas.layout().itemAt(1).widget().draw()
         return 
     
     def reset_canvas(self):
         self.set_variables()
+        self.update_canvas()
         return
     
 if __name__ == '__main__':
