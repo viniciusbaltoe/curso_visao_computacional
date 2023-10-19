@@ -290,13 +290,11 @@ class MainWindow(QMainWindow):
         # Criar um objeto FigureCanvas para exibir o gráfico 3D
         self.fig2 = plt.figure()
         self.ax2 = self.fig2.add_subplot(111, projection='3d')
-        ##################################
-        
-        ##################################
         
         ##### Falta plotar o seu objeto 3D e os referenciais da câmera e do mundo
-
+        # Objeto
         self.ax2.plot(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b' )
+        # Camera
         draw_arrows(self.camera[:,-1], self.camera[:,0:3], self.ax2)
 
         self.canvas2 = FigureCanvas(self.fig2)
