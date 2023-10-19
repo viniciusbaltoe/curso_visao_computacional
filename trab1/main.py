@@ -280,13 +280,55 @@ class MainWindow(QMainWindow):
     ##### Você deverá criar as suas funções aqui
     
     def update_params_intrinsc(self, line_edits):
+        data = []
+        for i in line_edits:
+            try:
+                value = float(i.text())
+                data.append(value)
+            except:
+                data.append(float(0))    
+        n_pixels_base   = float(data[0])
+        n_pixels_altura = float(data[2])
+        ccd_x           = float(data[4])
+        ccd_y           = float(data[1])
+        dist_focal      = float(data[3])
+        s_theta         = float(data[5])
+        # Falta completar
         return 
 
     def update_world(self,line_edits):
-        print(line_edits[0].text(), line_edits[1].text(), line_edits[2].text(), line_edits[3].text(), line_edits[4].text(), line_edits[5].text())
+        data = []
+        for i in line_edits:
+            try:
+                value = float(i.text())
+                data.append(value)
+            except:
+                data.append(float(0))  
+        x_move  = float(data[0])
+        y_move  = float(data[2])
+        z_move  = float(data[4])
+        x_angle = float(data[1])
+        y_angle = float(data[3])
+        z_angle = float(data[5])
+        #T = world_translation()
+        print(x_move, y_move, z_move, x_angle)
         return
 
     def update_cam(self,line_edits):
+        data = []
+        for i in line_edits:
+            try:
+                value = float(i.text())
+                data.append(value)
+            except:
+                data.append(float(0))  
+        x_move  = float(data[0])
+        y_move  = float(data[2])
+        z_move  = float(data[4])
+        x_angle = float(data[1])
+        y_angle = float(data[3])
+        z_angle = float(data[5])
+        # Falta completar
         return 
     
     def projection_2d(self):
