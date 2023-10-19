@@ -320,6 +320,7 @@ class MainWindow(QMainWindow):
         self.dist_foc   = float(data[4])
         self.stheta     = float(data[5])
         # Falta completar
+        self.update_canvas()
         return 
 
     def update_world(self,line_edits):
@@ -346,6 +347,7 @@ class MainWindow(QMainWindow):
         
         M = T @ R
         self.camera = np.dot(M, self.camera)
+        self.update_canvas()
         return
 
     def update_cam(self,line_edits):
@@ -372,16 +374,29 @@ class MainWindow(QMainWindow):
         
         M = T @ R   # Foi escolhida esta ordem de acontecimentos.
         self.camera = np.dot(M, self.camera)
+        self.update_canvas()
         return 
     
     def projection_2d(self):
+        ## EDITAR
+
         return 
     
     def generate_intrinsic_params_matrix(self):
-        return 
+        fs_x = self.px_base * self.dist_foc / self.cdd[0]
+        fs_y = self.px_altura * self.dist_foc / self.ccd[1]
+        fs_theta = self.stheta * self.dist_foc
+        ox = self.px_base / 2
+        oy = self.px_altura / 2
+        MPI = array([[fs_x, fs_theta, ox],
+                     [   0,     fs_y, oy],
+                     [   0,        0,  1]])
+        return MPI
     
 
     def update_canvas(self):
+        plt.close('all')
+
         return 
     
     def reset_canvas(self):
