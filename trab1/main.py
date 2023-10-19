@@ -37,11 +37,17 @@ def world_rotation(eixo, theta): # eixo = [x, y, z] ; theta em graus.
       print('Eixo inexistente ou incorreto.')
     return rotation_matrix
 
-def cam_translation(x, y, z):
-    return None
+def cam_translation(M_cam, x, y, z):
+    M_inv = np.linalg.inv(M_cam)
+    T = world_translation(x, y, z)
+    translate_matrix = M_cam @ T @ M_inv
+    return translate_matrix
 
-def cam_rotation(eixo, theta):
-    return None
+def cam_rotation(M_cam, eixo, theta):
+    M_inv = np.linalg.inv(M_cam)
+    R = world_rotation(eixo, theta)
+    rotation_matrix = M_cam @ R @ M_inv
+    return rotation_matrix
 
 def change_cam2world (M, point_cam):
       #Convert from camera frame to world frame
@@ -334,7 +340,16 @@ class MainWindow(QMainWindow):
         x_angle = float(data[1])
         y_angle = float(data[3])
         z_angle = float(data[5])
-        # Falta completar
+
+        T = cam_translation(self.camera, x_move, y_move, z_move)
+
+        Rx = cam_rotation(self.camera, 'x', x_angle)
+        Ry = cam_rotation(self.camera, 'y', y_angle)
+        Rz = cam_rotation(self.camera, 'z', z_angle)
+        R = Rx @ Ry @ Rz
+        
+        M = T @ R   # Foi escolhida esta ordem de acontecimentos.
+        self.camera = np.dot(M, self.camera)
         return 
     
     def projection_2d(self):
