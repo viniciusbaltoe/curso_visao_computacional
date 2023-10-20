@@ -32,7 +32,7 @@ def set_plot(ax = None, figure = None, lim = [-2, 2]):
     ax.set_zlabel('z axis')
     return ax
 
-def draw_arrows(point,base,axis,length=1.5):
+def draw_arrows(point,base,axis,length=5):
     # The object base is a matrix, where each column represents the vector
     # of one of the axis, written in homogeneous coordinates (ax,ay,az,0)
     # Plot vector of x-axis
@@ -85,7 +85,46 @@ def change_world2cam (M, point_world):
       p_cam = np.dot(M_inv, point_world)
       return p_cam
 
+def house_example():
+    house = np.array([[0,         0,         0],
+            [0,  -10.0000,         0],
+            [0, -10.0000,   12.0000],
+            [0,  -10.4000,   11.5000],
+            [0,   -5.0000,   16.0000],
+            [0,         0,   12.0000],
+            [0,    0.5000,   11.4000],
+            [0,         0,   12.0000],
+            [0,         0,         0],
+    [-12.0000,         0,         0],
+    [-12.0000,   -5.0000,         0],
+    [-12.0000,  -10.0000,         0],
+            [0,  -10.0000,         0],
+            [0,  -10.0000,   12.0000],
+    [-12.0000,  -10.0000,   12.0000],
+    [-12.0000,         0,   12.0000],
+            [0,         0,   12.0000],
+            [0,  -10.0000,   12.0000],
+            [0,  -10.5000,   11.4000],
+    [-12.0000,  -10.5000,   11.4000],
+    [-12.0000,  -10.0000,   12.0000],
+    [-12.0000,   -5.0000,   16.0000],
+            [0,   -5.0000,   16.0000],
+            [0,    0.5000,   11.4000],
+    [-12.0000,    0.5000,   11.4000],
+    [-12.0000,         0,   12.0000],
+    [-12.0000,   -5.0000,   16.0000],
+    [-12.0000,  -10.0000,   12.0000],
+    [-12.0000,  -10.0000,         0],
+    [-12.0000,   -5.0000,         0],
+    [-12.0000,         0,         0],
+    [-12.0000,         0,   12.0000],
+    [-12.0000,         0,         0]])
 
+    house = np.transpose(house)
+
+    #add a vector of ones to the house matrix to represent the house in homogeneous coordinates
+    house = np.vstack([house, np.ones(np.size(house,1))])
+    return house
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -100,7 +139,11 @@ class MainWindow(QMainWindow):
 
     def set_variables(self):
         self.objeto = get_obj_stl('donkey_kong.STL')
-        
+        # Adequação do objeto para o mundo.
+        R = world_rotation('z', 90)
+        T = world_translation(0, 0, -30)
+        self.objeto = T @ R @ self.objeto
+
         # base vector values
         e1 = np.array([[1],[0],[0],[0]]) # X
         e2 = np.array([[0],[1],[0],[0]]) # Y
@@ -137,7 +180,7 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(line_edit_widget3, 0, 2)
         grid_layout.addWidget(self.canvas, 1, 0, 1, 3)
 
-          # Criar um widget para agrupar o botão de reset
+        # Criar um widget para agrupar o botão de reset
         reset_widget = QWidget()
         reset_layout = QHBoxLayout()
         reset_widget.setLayout(reset_layout)
@@ -433,6 +476,7 @@ class MainWindow(QMainWindow):
         self.ax2 = set_plot(ax=self.ax2, lim=[-40, 40])
         self.ax2.plot3D(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b')
         draw_arrows(self.camera[:,-1], self.camera[:,0:3], self.ax2)
+        draw_arrows(self.referencial[:,-1], self.referencial[:,0:3], self.ax2)
 
         self.canvas1.draw()
         self.canvas2.draw()
@@ -444,6 +488,16 @@ class MainWindow(QMainWindow):
         self.update_canvas()
         return
     
+    def posicionar_cam(self):
+        # Posicionamento da câmera fora da origem
+        T = world_translation(40, 0, 0) 
+        self.camera = T @ self.referencial
+        R = cam_rotation(self.camera, 'y', -90)
+        self.camera = R @ self.camera
+        R = cam_rotation(self.camera, 'z', 90)
+        self.camera = R @ self.camera
+        return
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_window = MainWindow()
