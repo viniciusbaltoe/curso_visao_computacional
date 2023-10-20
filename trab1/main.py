@@ -42,7 +42,6 @@ def set_plot(ax=None, figure=None, lim=[-2, 2]):
     if ax is None:
         ax = plt.axes(projection='3d')
 
-    ax.set_title('Referência da Câmera')
     ax.set_xlim(lim)
     ax.set_xlabel('Eixo X')
     ax.set_ylim(lim)
@@ -443,7 +442,7 @@ class MainWindow(QMainWindow):
 
         # Criar um objeto FigureCanvas para exibir o gráfico 2D
         self.fig1, self.ax1 = plt.subplots()
-        self.ax1.set_title("Imagem")
+        # self.ax1.set_title("Imagem")
         self.canvas1 = FigureCanvas(self.fig1)
 
         # TODO: Falta acertar os limites do eixo X
