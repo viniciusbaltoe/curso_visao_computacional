@@ -315,7 +315,7 @@ class MainWindow(QMainWindow):
                   self.stheta]
 
         # Adicionar widgets QLineEdit com caixa de texto ao layout de grade
-        for i, label_title in enumerate(labels):
+        for i, label_title in enumerate(labels, start=1):
             line_edit = QLineEdit()
             label = QLabel(label_title)
 
@@ -324,7 +324,7 @@ class MainWindow(QMainWindow):
 
             # Aplicar o validador ao QLineEdit
             line_edit.setValidator(validator)
-            line_edit.setText(str(values[i]))
+            line_edit.setText(str(values[i-1]))
             grid_layout.addWidget(label, (i-1)//2, 2*((i-1)%2))
             grid_layout.addWidget(line_edit, (i-1)//2, 2*((i-1)%2) + 1)
             line_edits.append(line_edit)
@@ -477,9 +477,7 @@ class MainWindow(QMainWindow):
         # Retornar o widget de canvas
         return canvas_widget
 
-
-    ##### Você deverá criar as suas funções aqui
-
+    # Você deverá criar as suas funções aqui
     def update_params_intrinsc(self, line_edits):
         data = [self.px_base,
                 self.px_altura,
@@ -489,12 +487,12 @@ class MainWindow(QMainWindow):
                 self.stheta
                 ]
 
-        for i in range(len(line_edits)):
-            try:
-                value = float(line_edits[i].text())
-                data[i] = value
-            except Exception:
-                pass
+        for i, _ in enumerate(data):
+            if line_edits[i].text() == '':
+                continue
+
+            value = float(line_edits[i].text())
+            data[i] = value
 
         self.px_base = float(data[0])
         self.px_altura = float(data[1])
@@ -503,7 +501,7 @@ class MainWindow(QMainWindow):
         self.dist_foc = float(data[4])
         self.stheta = float(data[5])
         self.update_canvas()
-        [i.clear() for i in line_edits]
+        # [i.clear() for i in line_edits]
         return
 
     def update_world(self, line_edits):
