@@ -15,7 +15,6 @@ from PyQt5.QtWidgets import (QApplication,
 
 from PyQt5.QtGui import QDoubleValidator
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from mpl_toolkits.mplot3d import Axes3D
 from numpy import array
 from stl import mesh
 import numpy as np
@@ -23,114 +22,167 @@ import numpy as np
 
 ###### Crie suas funções de translação, rotação, criação de referenciais, plotagem de setas e qualquer outra função que precisar
 
-def get_obj_stl(obj): # recebe o arquivo STL para a elaboração do vetor obj
+def get_obj_stl(obj):
+    """Converte arquivo STRL em uma matriz de vetores"""
+
     your_mesh = mesh.Mesh.from_file(obj)
+    vectors = your_mesh.vectors
     x = your_mesh.x.flatten()
     y = your_mesh.y.flatten()
     z = your_mesh.z.flatten()
-    return np.array([x.T,y.T,z.T,np.ones(x.size)])
 
-def set_plot(ax = None, figure = None, lim = [-2, 2]):
-    if figure == None:
-        figure = plt.figure(figsize=(8,8))
-    if ax == None:
+    return vectors, np.array([x.T, y.T, z.T, np.ones(x.size)])
+
+
+def set_plot(ax=None, figure=None, lim=[-2, 2]):
+    """Define os paramêtros iniciais do plot 3D"""
+
+    if figure is None:
+        figure = plt.figure(figsize=(8, 8))
+    if ax is None:
         ax = plt.axes(projection='3d')
-    #ax.set_title('camera reference')
+
+    ax.set_title('Referência da Câmera')
     ax.set_xlim(lim)
-    ax.set_xlabel('x axis')
+    ax.set_xlabel('Eixo X')
     ax.set_ylim(lim)
-    ax.set_ylabel('y axis')
+    ax.set_ylabel('Eixo Y')
     ax.set_zlim(lim)
-    ax.set_zlabel('z axis')
+    ax.set_zlabel('Eixo Z')
     return ax
 
-def draw_arrows(point,base,axis,length=5):
+
+def draw_arrows(point, base, axis, length=15):
     # The object base is a matrix, where each column represents the vector
     # of one of the axis, written in homogeneous coordinates (ax,ay,az,0)
     # Plot vector of x-axis
-    axis.quiver(point[0],point[1],point[2],base[0,0],base[1,0],base[2,0],color='red',pivot='tail',  length=length)
+
+    # X -> Vermelho
+    # Y -> Verde
+    # Z -> Azul
+
+    axis.quiver(point[0], point[1], point[2], base[0, 0], base[1, 0],
+                base[2, 0], color='red', pivot='tail', length=length)
     # Plot vector of y-axis
-    axis.quiver(point[0],point[1],point[2],base[0,1],base[1,1],base[2,1],color='green',pivot='tail',  length=length)
+    axis.quiver(point[0], point[1], point[2], base[0, 1], base[1, 1],
+                base[2, 1], color='green', pivot='tail', length=length)
     # Plot vector of z-axis
-    axis.quiver(point[0],point[1],point[2],base[0,2],base[1,2],base[2,2],color='blue',pivot='tail',  length=length)
+    axis.quiver(point[0], point[1], point[2], base[0, 2], base[1, 2],
+                base[2, 2], color='blue', pivot='tail', length=length)
     return axis
 
+
 def world_translation(x, y, z):
+    """Calcula a transalação em relação ao mundo"""
+
     translate_matrix = np.eye(4)
     translate_matrix[0, -1] = x
     translate_matrix[1, -1] = y
     translate_matrix[2, -1] = z
     return translate_matrix
 
-def world_rotation(eixo, theta): # eixo = [x, y, z] ; theta em graus.
-    theta = theta*np.pi/180 #
-    if   eixo == 'x':
-      rotation_matrix=np.array([[1,0,0,0],[0, np.cos(theta),-np.sin(theta),0],[0, np.sin(theta), np.cos(theta),0],[0,0,0,1]])
+
+def world_rotation(eixo, theta):
+    """Calcula rotação em relação ao mundo com theta dado em graus"""
+
+    theta = theta*np.pi/180
+
+    if eixo == 'x':
+        rotation_matrix = np.array([
+            [1, 0, 0, 0],
+            [0, np.cos(theta), -np.sin(theta), 0],
+            [0, np.sin(theta), np.cos(theta), 0],
+            [0, 0, 0, 1]]
+            )
+
     elif eixo == 'y':
-      rotation_matrix=np.array([[np.cos(theta),0, np.sin(theta),0],[0,1,0,0],[-np.sin(theta), 0, np.cos(theta),0],[0,0,0,1]])
+        rotation_matrix = np.array([
+            [np.cos(theta), 0, np.sin(theta), 0],
+            [0, 1, 0, 0],
+            [-np.sin(theta), 0, np.cos(theta), 0],
+            [0, 0, 0, 1]]
+            )
+
     elif eixo == 'z':
-      rotation_matrix=np.array([[np.cos(theta),-np.sin(theta),0,0],[np.sin(theta),np.cos(theta),0,0],[0,0,1,0],[0,0,0,1]])
+        rotation_matrix = np.array([
+            [np.cos(theta), -np.sin(theta), 0, 0],
+            [np.sin(theta), np.cos(theta), 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]
+            )
     else:
-      print('Eixo inexistente ou incorreto.')
+        print('Eixo inexistente ou incorreto.')
     return rotation_matrix
 
+
 def cam_translation(M_cam, x, y, z):
+    """Calcula a translação da câmera"""
+
     M_inv = np.linalg.inv(M_cam)
     T = world_translation(x, y, z)
     translate_matrix = M_cam @ T @ M_inv
     return translate_matrix
 
+
 def cam_rotation(M_cam, eixo, theta):
+    """Calcula a rotação da câmera"""
+
     M_inv = np.linalg.inv(M_cam)
     R = world_rotation(eixo, theta)
     rotation_matrix = M_cam @ R @ M_inv
     return rotation_matrix
 
-def change_cam2world (M, point_cam):
-      #Convert from camera frame to world frame
-      p_world = np.dot(M, point_cam)
-      return p_world
 
-def change_world2cam (M, point_world):
-      #Convert from world frame to camera frame
-      M_inv = np.linalg.inv(M)
-      p_cam = np.dot(M_inv, point_world)
-      return p_cam
+def change_cam2world(M, point_cam):
+    """Convert from camera frame to world frame"""
+
+    p_world = np.dot(M, point_cam)
+    return p_world
+
+
+def change_world2cam(M, point_world):
+    """Convert from world frame to camera frame"""
+
+    M_inv = np.linalg.inv(M)
+    p_cam = np.dot(M_inv, point_world)
+    return p_cam
+
 
 def house_example():
-    house = np.array([[0,         0,         0],
-            [0,  -10.0000,         0],
-            [0, -10.0000,   12.0000],
-            [0,  -10.4000,   11.5000],
-            [0,   -5.0000,   16.0000],
-            [0,         0,   12.0000],
-            [0,    0.5000,   11.4000],
-            [0,         0,   12.0000],
-            [0,         0,         0],
-    [-12.0000,         0,         0],
-    [-12.0000,   -5.0000,         0],
-    [-12.0000,  -10.0000,         0],
-            [0,  -10.0000,         0],
-            [0,  -10.0000,   12.0000],
-    [-12.0000,  -10.0000,   12.0000],
-    [-12.0000,         0,   12.0000],
-            [0,         0,   12.0000],
-            [0,  -10.0000,   12.0000],
-            [0,  -10.5000,   11.4000],
-    [-12.0000,  -10.5000,   11.4000],
-    [-12.0000,  -10.0000,   12.0000],
-    [-12.0000,   -5.0000,   16.0000],
-            [0,   -5.0000,   16.0000],
-            [0,    0.5000,   11.4000],
-    [-12.0000,    0.5000,   11.4000],
-    [-12.0000,         0,   12.0000],
-    [-12.0000,   -5.0000,   16.0000],
-    [-12.0000,  -10.0000,   12.0000],
-    [-12.0000,  -10.0000,         0],
-    [-12.0000,   -5.0000,         0],
-    [-12.0000,         0,         0],
-    [-12.0000,         0,   12.0000],
-    [-12.0000,         0,         0]])
+    house = np.array([
+        [0,         0,         0],
+        [0,  -10.0000,         0],
+        [0, -10.0000,   12.0000],
+        [0,  -10.4000,   11.5000],
+        [0,   -5.0000,   16.0000],
+        [0,         0,   12.0000],
+        [0,    0.5000,   11.4000],
+        [0,         0,   12.0000],
+        [0,         0,         0],
+        [-12.0000,         0,         0],
+        [-12.0000,   -5.0000,         0],
+        [-12.0000,  -10.0000,         0],
+        [0,  -10.0000,         0],
+        [0,  -10.0000,   12.0000],
+        [-12.0000,  -10.0000,   12.0000],
+        [-12.0000,         0,   12.0000],
+        [0,         0,   12.0000],
+        [0,  -10.0000,   12.0000],
+        [0,  -10.5000,   11.4000],
+        [-12.0000,  -10.5000,   11.4000],
+        [-12.0000,  -10.0000,   12.0000],
+        [-12.0000,   -5.0000,   16.0000],
+        [0,   -5.0000,   16.0000],
+        [0,    0.5000,   11.4000],
+        [-12.0000,    0.5000,   11.4000],
+        [-12.0000,         0,   12.0000],
+        [-12.0000,   -5.0000,   16.0000],
+        [-12.0000,  -10.0000,   12.0000],
+        [-12.0000,  -10.0000,         0],
+        [-12.0000,   -5.0000,         0],
+        [-12.0000,         0,         0],
+        [-12.0000,         0,   12.0000],
+        [-12.0000,         0,         0]])
 
     house = np.transpose(house)
 
@@ -138,32 +190,36 @@ def house_example():
     house = np.vstack([house, np.ones(np.size(house,1))])
     return house
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        #definindo as variaveis
+        # definindo as variaveis
         self.set_variables()
-        #Ajustando a tela
-        self.setWindowTitle("Grid Layout")
+
+        # Ajustando a tela
+        title = "Trabalho 1 de Visão Computacional - Vinicius e Lázaro"
+        self.setWindowTitle(title)
         self.setGeometry(100, 100, 1280, 720)
         self.setup_ui()
 
     def set_variables(self):
-        self.objeto = get_obj_stl('donkey_kong.STL')
+        self.vectors, self.objeto = get_obj_stl('donkey_kong.STL')
+
         # Adequação do objeto para o mundo.
         R = world_rotation('z', 90)
         T = world_translation(0, 0, -30)
         self.objeto = T @ R @ self.objeto
 
         # base vector values
-        e1 = np.array([[1],[0],[0],[0]]) # X
-        e2 = np.array([[0],[1],[0],[0]]) # Y
-        e3 = np.array([[0],[0],[1],[0]]) # Z
-        base = np.hstack((e1,e2,e3))
-        #origin point
-        point =np.array([[0],[0],[0],[1]])
-        self.camera = np.hstack((base,point))
+        e1 = np.array([[1], [0], [0], [0]])  # X
+        e2 = np.array([[0], [1], [0], [0]])  # Y
+        e3 = np.array([[0], [0], [1], [0]])  # Z
+        base = np.hstack((e1, e2, e3))
+        # origin point
+        point = np.array([[0], [0], [0], [1]])
+        self.camera = np.hstack((base, point))
         self.referencial = self.camera
 
         self.px_base = 1280
@@ -172,7 +228,7 @@ class MainWindow(QMainWindow):
         self.stheta = 0
         self.ox = self.px_base/2
         self.oy = self.px_altura/2
-        self.ccd = [36,24]
+        self.ccd = [36, 24]
         self.projection_matrix = np.eye(3, 4)
 
     def setup_ui(self):
@@ -180,9 +236,9 @@ class MainWindow(QMainWindow):
         grid_layout = QGridLayout()
 
         # Criar os widgets
-        line_edit_widget1 = self.create_world_widget("Ref mundo")
-        line_edit_widget2  = self.create_cam_widget("Ref camera")
-        line_edit_widget3  = self.create_intrinsic_widget("Params instr.")
+        line_edit_widget1 = self.create_world_widget("Refência do mundo")
+        line_edit_widget2 = self.create_cam_widget("Referência da câmera")
+        line_edit_widget3 = self.create_intrinsic_widget("Parametros intrínsecos.")
 
         self.canvas = self.create_matplotlib_canvas()
 
@@ -199,7 +255,8 @@ class MainWindow(QMainWindow):
 
         # Criar o botão de reset vermelho
         reset_button = QPushButton("Reset")
-        reset_button.setFixedSize(50, 30)  # Define um tamanho fixo para o botão (largura: 50 pixels, altura: 30 pixels)
+        # Define um tamanho fixo para o botão em pixels.
+        reset_button.setFixedSize(50, 30)
         style_sheet = """
             QPushButton {
                 color : white ;
@@ -212,22 +269,18 @@ class MainWindow(QMainWindow):
         reset_button.setStyleSheet(style_sheet)
         reset_button.clicked.connect(self.reset_canvas)
 
-
         # Botao camera
         camera_button = QPushButton("Camera")
         camera_button.setFixedSize(80, 30)
         camera_button.setStyleSheet(style_sheet)
         camera_button.clicked.connect(self.posicionar_cam)
 
-
-        # Adicionar o botão de reset ao layout
+        # Adicionar os botões de reset e de setar câmera ao layout
         reset_layout.addWidget(reset_button)
         reset_layout.addWidget(camera_button)
-        # reset_layout.addWidget(camera_button)
 
-        # Adicionar o widget de reset ao layout de grade
+        # Adicionar o widget de reset/camera ao layout de grade
         grid_layout.addWidget(reset_widget, 2, 0, 1, 3)
-#
 
         # Criar um widget central e definir o layout de grade como seu layout
         central_widget = QWidget()
@@ -246,14 +299,32 @@ class MainWindow(QMainWindow):
         grid_layout = QGridLayout()
 
         line_edits = []
-        labels = ['n_pixels_base:', 'n_pixels_altura:', 'ccd_x:', 'ccd_y:', 'dist_focal:', 'sθ:']  # Texto a ser exibido antes de cada QLineEdit
+
+        # Texto a ser exibido antes de cada QLineEdit
+        labels = ['n_pixels_base:',
+                  'n_pixels_altura:',
+                  'ccd_x:',
+                  'ccd_y:',
+                  'dist_focal:',
+                  'sθ:']
+        values = [self.px_base,
+                  self.px_altura,
+                  self.ccd[0],
+                  self.ccd[1],
+                  self.dist_foc,
+                  self.stheta]
 
         # Adicionar widgets QLineEdit com caixa de texto ao layout de grade
-        for i in range(1, 7):
+        for i, label_title in enumerate(labels):
             line_edit = QLineEdit()
-            label = QLabel(labels[i-1])
-            validator = QDoubleValidator()  # Validador numérico
-            line_edit.setValidator(validator)  # Aplicar o validador ao QLineEdit
+            label = QLabel(label_title)
+
+            # Validador numérico
+            validator = QDoubleValidator()
+
+            # Aplicar o validador ao QLineEdit
+            line_edit.setValidator(validator)
+            line_edit.setText(str(values[i]))
             grid_layout.addWidget(label, (i-1)//2, 2*((i-1)%2))
             grid_layout.addWidget(line_edit, (i-1)//2, 2*((i-1)%2) + 1)
             line_edits.append(line_edit)
@@ -261,7 +332,8 @@ class MainWindow(QMainWindow):
         # Criar o botão de atualização
         update_button = QPushButton("Atualizar")
 
-        ##### Você deverá criar, no espaço reservado ao final, a função self.update_params_intrinsc ou outra que você queira
+        # Você deverá criar, no espaço reservado ao final, a função
+        # self.update_params_intrinsc ou outra que você queira
         # Conectar a função de atualização aos sinais de clique do botão
         update_button.clicked.connect(lambda: self.update_params_intrinsc(line_edits))
 
@@ -282,7 +354,13 @@ class MainWindow(QMainWindow):
         grid_layout = QGridLayout()
 
         line_edits = []
-        labels = ['X(move):', 'X(angle):', 'Y(move):', 'Y(angle):', 'Z(move):', 'Z(angle):']  # Texto a ser exibido antes de cada QLineEdit
+        labels = ['X(move):',
+                  'X(angle):',
+                  'Y(move):',
+                  'Y(angle):',
+                  'Z(move):',
+                  'Z(angle):'
+                  ]  # Texto a ser exibido antes de cada QLineEdit
 
         # Adicionar widgets QLineEdit com caixa de texto ao layout de grade
         for i in range(1, 7):
@@ -297,7 +375,8 @@ class MainWindow(QMainWindow):
         # Criar o botão de atualização
         update_button = QPushButton("Atualizar")
 
-        ##### Você deverá criar, no espaço reservado ao final, a função self.update_world ou outra que você queira
+        # Você deverá criar, no espaço reservado ao final, a função
+        # self.update_world ou outra que você queira
         # Conectar a função de atualização aos sinais de clique do botão
         update_button.clicked.connect(lambda: self.update_world(line_edits))
 
@@ -318,22 +397,34 @@ class MainWindow(QMainWindow):
         grid_layout = QGridLayout()
 
         line_edits = []
-        labels = ['X(move):', 'X(angle):', 'Y(move):', 'Y(angle):', 'Z(move):', 'Z(angle):']  # Texto a ser exibido antes de cada QLineEdit
+
+        # Texto a ser exibido antes de cada QLineEdit
+        labels = ['X(move):',
+                  'X(angle):',
+                  'Y(move):',
+                  'Y(angle):',
+                  'Z(move):',
+                  'Z(angle):']
 
         # Adicionar widgets QLineEdit com caixa de texto ao layout de grade
         for i in range(1, 7):
             line_edit = QLineEdit()
             label = QLabel(labels[i-1])
-            validator = QDoubleValidator()  # Validador numérico
-            line_edit.setValidator(validator)  # Aplicar o validador ao QLineEdit
-            grid_layout.addWidget(label, (i-1)//2, 2*((i-1)%2))
-            grid_layout.addWidget(line_edit, (i-1)//2, 2*((i-1)%2) + 1)
+
+            # Validador numérico
+            validator = QDoubleValidator()
+
+            # Aplicar o validador ao QLineEdit
+            line_edit.setValidator(validator)
+            grid_layout.addWidget(label, (i-1)//2, 2*((i-1) % 2))
+            grid_layout.addWidget(line_edit, (i-1)//2, 2*((i-1) % 2) + 1)
             line_edits.append(line_edit)
 
         # Criar o botão de atualização
         update_button = QPushButton("Atualizar")
 
-        ##### Você deverá criar, no espaço reservado ao final, a função self.update_cam ou outra que você queira
+        # Você deverá criar, no espaço reservado ao final, a função
+        # self.update_cam ou outra que você queira
         # Conectar a função de atualização aos sinais de clique do botão
         update_button.clicked.connect(lambda: self.update_cam(line_edits))
 
@@ -355,14 +446,14 @@ class MainWindow(QMainWindow):
         self.ax1.set_title("Imagem")
         self.canvas1 = FigureCanvas(self.fig1)
 
-        ##### Falta acertar os limites do eixo X
+        # TODO: Falta acertar os limites do eixo X
         self.ax1.set_xlim([0, self.px_base])
-        ##### Falta acertar os limites do eixo Y
+        # TODO: Falta acertar os limites do eixo Y
         self.ax1.set_ylim([self.px_altura, 0])
-        ##### Você deverá criar a função de projeção
+        # TODO: Você deverá criar a função de projeção
         obj_2d = self.projection_2d()
 
-        ##### Falta plotar o object_2d que retornou da projeção
+        # TODO: Falta plotar o object_2d que retornou da projeção
         self.ax1.plot(obj_2d[0, :], obj_2d[1, :])
         self.ax1.grid('True')
         self.ax1.set_aspect('equal')
@@ -371,14 +462,14 @@ class MainWindow(QMainWindow):
         # Criar um objeto FigureCanvas para exibir o gráfico 3D
         self.fig2 = plt.figure()
         self.ax2 = self.fig2.add_subplot(111, projection='3d')
-        self.ax2 = set_plot(ax=self.ax2, lim = [-40, 40])
+        self.ax2 = set_plot(ax=self.ax2, lim=[-40, 40])
 
         # Objeto
         self.ax2.plot(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b' )
         # Camera
-        draw_arrows(self.camera[:,-1], self.camera[:,0:3], self.ax2)
+        draw_arrows(self.camera[:, -1], self.camera[:, 0:3], self.ax2)
         # Referencial no mundo
-        draw_arrows(self.referencial[:,-1], self.referencial[:,0:3], self.ax2)
+        draw_arrows(self.referencial[:, -1], self.referencial[:, 0:3], self.ax2)
 
         self.canvas2 = FigureCanvas(self.fig2)
         canvas_layout.addWidget(self.canvas2)
@@ -390,33 +481,42 @@ class MainWindow(QMainWindow):
     ##### Você deverá criar as suas funções aqui
 
     def update_params_intrinsc(self, line_edits):
-        data = [self.px_base, self.px_altura, self.ccd[0], self.ccd[1], self.dist_foc, self.stheta]
+        data = [self.px_base,
+                self.px_altura,
+                self.ccd[0],
+                self.ccd[1],
+                self.dist_foc,
+                self.stheta
+                ]
+
         for i in range(len(line_edits)):
             try:
                 value = float(line_edits[i].text())
                 data[i] = value
-            except: None
-        self.px_base    = float(data[0])
-        self.px_altura  = float(data[1])
-        self.ccd[0]     = float(data[2])
-        self.ccd[1]     = float(data[3])
-        self.dist_foc   = float(data[4])
-        self.stheta     = float(data[5])
+            except Exception:
+                pass
+
+        self.px_base = float(data[0])
+        self.px_altura = float(data[1])
+        self.ccd[0] = float(data[2])
+        self.ccd[1] = float(data[3])
+        self.dist_foc = float(data[4])
+        self.stheta = float(data[5])
         self.update_canvas()
         [i.clear() for i in line_edits]
         return
 
-    def update_world(self,line_edits):
+    def update_world(self, line_edits):
         data = []
         for i in line_edits:
             try:
                 value = float(i.text())
                 data.append(value)
-            except:
+            except Exception:
                 data.append(float(0))
-        x_move  = float(data[0])
-        y_move  = float(data[2])
-        z_move  = float(data[4])
+        x_move = float(data[0])
+        y_move = float(data[2])
+        z_move = float(data[4])
         x_angle = float(data[1])
         y_angle = float(data[3])
         z_angle = float(data[5])
@@ -434,17 +534,17 @@ class MainWindow(QMainWindow):
         [i.clear() for i in line_edits]
         return
 
-    def update_cam(self,line_edits):
+    def update_cam(self, line_edits):
         data = []
         for i in line_edits:
             try:
                 value = float(i.text())
                 data.append(value)
-            except:
+            except Exception:
                 data.append(float(0))
-        x_move  = float(data[0])
-        y_move  = float(data[2])
-        z_move  = float(data[4])
+        x_move = float(data[0])
+        y_move = float(data[2])
+        z_move = float(data[4])
         x_angle = float(data[1])
         y_angle = float(data[3])
         z_angle = float(data[5])
@@ -478,8 +578,8 @@ class MainWindow(QMainWindow):
         ox = self.px_base / 2
         oy = self.px_altura / 2
         MPI = array([[fs_x, fs_theta, ox],
-                     [   0,     fs_y, oy],
-                     [   0,        0,  1]])
+                     [0, fs_y, oy],
+                     [0, 0, 1]])
         return MPI
 
     def update_canvas(self):
@@ -498,8 +598,8 @@ class MainWindow(QMainWindow):
         self.ax2.clear()
         self.ax2 = set_plot(ax=self.ax2, lim=[-40, 40])
         self.ax2.plot3D(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b')
-        draw_arrows(self.camera[:,-1], self.camera[:,0:3], self.ax2)
-        draw_arrows(self.referencial[:,-1], self.referencial[:,0:3], self.ax2)
+        draw_arrows(self.camera[:, -1], self.camera[:, 0:3], self.ax2)
+        draw_arrows(self.referencial[:, -1], self.referencial[:, 0:3], self.ax2)
 
         self.canvas1.draw()
         self.canvas2.draw()
@@ -521,6 +621,7 @@ class MainWindow(QMainWindow):
         self.camera = R @ self.camera
         self.update_canvas()
         return
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
