@@ -1,6 +1,18 @@
+#! /usr/bin/env python3
+
 import sys
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QLabel, QWidget, QLineEdit, QHBoxLayout, QVBoxLayout, QPushButton,QGroupBox
+from PyQt5.QtWidgets import (QApplication,
+                             QMainWindow,
+                             QGridLayout,
+                             QLabel,
+                             QWidget,
+                             QLineEdit,
+                             QHBoxLayout,
+                             QVBoxLayout,
+                             QPushButton,
+                             QGroupBox)
+
 from PyQt5.QtGui import QDoubleValidator
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from mpl_toolkits.mplot3d import Axes3D
@@ -43,12 +55,12 @@ def draw_arrows(point,base,axis,length=5):
     axis.quiver(point[0],point[1],point[2],base[0,2],base[1,2],base[2,2],color='blue',pivot='tail',  length=length)
     return axis
 
-def world_translation(x, y, z): 
+def world_translation(x, y, z):
     translate_matrix = np.eye(4)
     translate_matrix[0, -1] = x
     translate_matrix[1, -1] = y
     translate_matrix[2, -1] = z
-    return translate_matrix                    
+    return translate_matrix
 
 def world_rotation(eixo, theta): # eixo = [x, y, z] ; theta em graus.
     theta = theta*np.pi/180 #
@@ -132,9 +144,9 @@ class MainWindow(QMainWindow):
 
         #definindo as variaveis
         self.set_variables()
-        #Ajustando a tela    
+        #Ajustando a tela
         self.setWindowTitle("Grid Layout")
-        self.setGeometry(100, 100,1280 , 720)
+        self.setGeometry(100, 100, 1280, 720)
         self.setup_ui()
 
     def set_variables(self):
@@ -154,12 +166,12 @@ class MainWindow(QMainWindow):
         self.camera = np.hstack((base,point))
         self.referencial = self.camera
 
-        self.px_base = 1280  
-        self.px_altura = 720 
-        self.dist_foc = 50 
-        self.stheta = 0 
-        self.ox = self.px_base/2 
-        self.oy = self.px_altura/2 
+        self.px_base = 1280
+        self.px_altura = 720
+        self.dist_foc = 50
+        self.stheta = 0
+        self.ox = self.px_base/2
+        self.oy = self.px_altura/2
         self.ccd = [36,24]
         self.projection_matrix = np.eye(3, 4)
 
@@ -200,16 +212,27 @@ class MainWindow(QMainWindow):
         reset_button.setStyleSheet(style_sheet)
         reset_button.clicked.connect(self.reset_canvas)
 
+
+        # Botao camera
+        camera_button = QPushButton("Camera")
+        camera_button.setFixedSize(80, 30)
+        camera_button.setStyleSheet(style_sheet)
+        camera_button.clicked.connect(self.posicionar_cam)
+
+
         # Adicionar o botão de reset ao layout
         reset_layout.addWidget(reset_button)
+        reset_layout.addWidget(camera_button)
+        # reset_layout.addWidget(camera_button)
 
         # Adicionar o widget de reset ao layout de grade
         grid_layout.addWidget(reset_widget, 2, 0, 1, 3)
+#
 
         # Criar um widget central e definir o layout de grade como seu layout
         central_widget = QWidget()
         central_widget.setLayout(grid_layout)
-        
+
         # Definir o widget central na janela principal
         self.setCentralWidget(central_widget)
 
@@ -238,7 +261,7 @@ class MainWindow(QMainWindow):
         # Criar o botão de atualização
         update_button = QPushButton("Atualizar")
 
-        ##### Você deverá criar, no espaço reservado ao final, a função self.update_params_intrinsc ou outra que você queira 
+        ##### Você deverá criar, no espaço reservado ao final, a função self.update_params_intrinsc ou outra que você queira
         # Conectar a função de atualização aos sinais de clique do botão
         update_button.clicked.connect(lambda: self.update_params_intrinsc(line_edits))
 
@@ -248,7 +271,7 @@ class MainWindow(QMainWindow):
 
         # Retornar o widget e a lista de caixas de texto
         return line_edit_widget
-    
+
     def create_world_widget(self, title):
         # Criar um widget para agrupar os QLineEdit
         line_edit_widget = QGroupBox(title)
@@ -274,7 +297,7 @@ class MainWindow(QMainWindow):
         # Criar o botão de atualização
         update_button = QPushButton("Atualizar")
 
-        ##### Você deverá criar, no espaço reservado ao final, a função self.update_world ou outra que você queira 
+        ##### Você deverá criar, no espaço reservado ao final, a função self.update_world ou outra que você queira
         # Conectar a função de atualização aos sinais de clique do botão
         update_button.clicked.connect(lambda: self.update_world(line_edits))
 
@@ -310,7 +333,7 @@ class MainWindow(QMainWindow):
         # Criar o botão de atualização
         update_button = QPushButton("Atualizar")
 
-        ##### Você deverá criar, no espaço reservado ao final, a função self.update_cam ou outra que você queira 
+        ##### Você deverá criar, no espaço reservado ao final, a função self.update_cam ou outra que você queira
         # Conectar a função de atualização aos sinais de clique do botão
         update_button.clicked.connect(lambda: self.update_cam(line_edits))
 
@@ -336,20 +359,20 @@ class MainWindow(QMainWindow):
         self.ax1.set_xlim([0, self.px_base])
         ##### Falta acertar os limites do eixo Y
         self.ax1.set_ylim([self.px_altura, 0])
-        ##### Você deverá criar a função de projeção 
+        ##### Você deverá criar a função de projeção
         obj_2d = self.projection_2d()
 
         ##### Falta plotar o object_2d que retornou da projeção
         self.ax1.plot(obj_2d[0, :], obj_2d[1, :])
         self.ax1.grid('True')
-        self.ax1.set_aspect('equal')  
+        self.ax1.set_aspect('equal')
         canvas_layout.addWidget(self.canvas1)
 
         # Criar um objeto FigureCanvas para exibir o gráfico 3D
         self.fig2 = plt.figure()
         self.ax2 = self.fig2.add_subplot(111, projection='3d')
         self.ax2 = set_plot(ax=self.ax2, lim = [-40, 40])
-        
+
         # Objeto
         self.ax2.plot(self.objeto[0, :], self.objeto[1, :], self.objeto[2, :], 'b' )
         # Camera
@@ -365,14 +388,14 @@ class MainWindow(QMainWindow):
 
 
     ##### Você deverá criar as suas funções aqui
-    
+
     def update_params_intrinsc(self, line_edits):
         data = [self.px_base, self.px_altura, self.ccd[0], self.ccd[1], self.dist_foc, self.stheta]
         for i in range(len(line_edits)):
             try:
                 value = float(line_edits[i].text())
                 data[i] = value
-            except: None   
+            except: None
         self.px_base    = float(data[0])
         self.px_altura  = float(data[1])
         self.ccd[0]     = float(data[2])
@@ -381,7 +404,7 @@ class MainWindow(QMainWindow):
         self.stheta     = float(data[5])
         self.update_canvas()
         [i.clear() for i in line_edits]
-        return 
+        return
 
     def update_world(self,line_edits):
         data = []
@@ -390,21 +413,21 @@ class MainWindow(QMainWindow):
                 value = float(i.text())
                 data.append(value)
             except:
-                data.append(float(0))  
+                data.append(float(0))
         x_move  = float(data[0])
         y_move  = float(data[2])
         z_move  = float(data[4])
         x_angle = float(data[1])
         y_angle = float(data[3])
         z_angle = float(data[5])
-        
+
         T = world_translation(x_move, y_move, z_move)
 
         Rx = world_rotation('x', x_angle)
         Ry = world_rotation('y', y_angle)
         Rz = world_rotation('z', z_angle)
         R = Rx @ Ry @ Rz
-        
+
         M = T @ R
         self.camera = np.dot(M, self.camera)
         self.update_canvas()
@@ -418,7 +441,7 @@ class MainWindow(QMainWindow):
                 value = float(i.text())
                 data.append(value)
             except:
-                data.append(float(0))  
+                data.append(float(0))
         x_move  = float(data[0])
         y_move  = float(data[2])
         z_move  = float(data[4])
@@ -432,13 +455,13 @@ class MainWindow(QMainWindow):
         Ry = cam_rotation(self.camera, 'y', y_angle)
         Rz = cam_rotation(self.camera, 'z', z_angle)
         R = Rx @ Ry @ Rz
-        
+
         M = T @ R   # Foi escolhida esta ordem de acontecimentos.
         self.camera = np.dot(M, self.camera)
         self.update_canvas()
         [i.clear() for i in line_edits]
-        return 
-    
+        return
+
     def projection_2d(self):
         Cam_inv = np.linalg.inv(self.camera)
         MPI = self.generate_intrinsic_params_matrix()
@@ -447,7 +470,7 @@ class MainWindow(QMainWindow):
         obj_2d[1, :] = obj_2d[1, :] / obj_2d[2, :]
         obj_2d[2, :] = obj_2d[2, :] / obj_2d[2, :]
         return obj_2d
-    
+
     def generate_intrinsic_params_matrix(self):
         fs_x = self.px_base * self.dist_foc / self.ccd[0]
         fs_y = self.px_altura * self.dist_foc / self.ccd[1]
@@ -458,10 +481,10 @@ class MainWindow(QMainWindow):
                      [   0,     fs_y, oy],
                      [   0,        0,  1]])
         return MPI
-    
+
     def update_canvas(self):
         plt.close('all')
-        
+
         # Parte 2D
         obj_2d = self.projection_2d()
         self.ax1.clear()
@@ -481,21 +504,22 @@ class MainWindow(QMainWindow):
         self.canvas1.draw()
         self.canvas2.draw()
         self.canvas.layout().itemAt(1).widget().draw()
-        return 
-    
+        return
+
     def reset_canvas(self):
         self.set_variables()
         self.update_canvas()
         return
-    
+
     def posicionar_cam(self):
         # Posicionamento da câmera fora da origem
-        T = world_translation(40, 0, 0) 
+        T = world_translation(40, 0, 0)
         self.camera = T @ self.referencial
         R = cam_rotation(self.camera, 'y', -90)
         self.camera = R @ self.camera
         R = cam_rotation(self.camera, 'z', 90)
         self.camera = R @ self.camera
+        self.update_canvas()
         return
 
 if __name__ == '__main__':
