@@ -118,14 +118,12 @@ def RANSAC(pts1, pts2, dis_threshold, N, Ninl):
         projected_pts_normalized = (projected_pts_homogeneous / projected_pts_homogeneous[2, :]).T
 
         # Calcula as distâncias entre os pontos projetados normalizados e os pontos reais
-        distances = np.sqrt(np.sum((projected_pts_normalized[:, :2] - pts2_transposed[:, :2])**2, axis=1))
-        #print(distances)
-        #print(dis_threshold)
+        # distances = np.sqrt(np.sum((projected_pts_normalized[:, :2] - pts2_transposed[:, :2])**2, axis=1))
+        distances = np.sqrt(np.sum((projected_pts_normalized[:, :2] - pts2_transposed[:2, :].T)**2, axis=1))
 
         # Identifica inliers
         inliers = np.where(distances < dis_threshold)[0]
         num_inliers = len(inliers)
-        #print(inliers)
 
         # Atualiza o melhor modelo se tiver mais inliers
         if num_inliers > best_num_inliers:
@@ -140,8 +138,6 @@ def RANSAC(pts1, pts2, dis_threshold, N, Ninl):
     # Estima a homografia final H usando todos os inliers selecionados
     pts1_in = pts1[best_inliers, :]
     pts2_in = pts2[best_inliers, :]
-    print('###############################################')
-    print(pts1_in)
     final_H = compute_normalized_dlt(pts1_in[:,0], pts2_in[:,0])
 
     return final_H, pts1_in, pts2_in
@@ -179,7 +175,7 @@ if len(good) > MIN_MATCH_COUNT:
     dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1, 1, 2)
     
     #################################################
-    M = RANSAC(src_pts, dst_pts, 5, 100, 0.99) # 0.99 foi sugerido pela professora.
+    M, pts_1_in, pts_2_in = RANSAC(src_pts, dst_pts, 5, 100, 0.99) # 0.99 foi sugerido pela professora.
     #################################################
 
     img4 = cv.warpPerspective(img1, M, (img2.shape[1], img2.shape[0])) 

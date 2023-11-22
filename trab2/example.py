@@ -93,9 +93,15 @@ def RANSAC(pts1, pts2, dis_threshold, N, Ninl=0.99):
         sampled_pts1    = pts1[pts_s_ind]
         sampled_pts2    = pts2[pts_s_ind]
 
-        #print(sampled_pts1)
+        # print('sample1:\n')
+        # print(sampled_pts1)
+        # print('sample2:\n')
+        # print(sampled_pts2)
+
         # Usa as amostras para estimar uma homografia usando o DTL Normalizado
         H = my_homography(sampled_pts1[:,0],sampled_pts2[:,0])
+        
+        #print(H)
 
         if not len(H):
             iterations += 1
@@ -113,11 +119,11 @@ def RANSAC(pts1, pts2, dis_threshold, N, Ninl=0.99):
             #print(abc)
             lixo.append(abc)
             transformed_pts = np.dot(H,abc)
-            print(transformed_pts)
+            #print(transformed_pts)
             transformed_pts /= transformed_pts[2]  # Normalizar pela coordenada homogênea
-            print(transformed_pts)
+            #print(transformed_pts)
             distance = np.sqrt((transformed_pts[0] - x2) ** 2 + (transformed_pts[1] - y2) ** 2)
-            print(distance)
+            #print(distance)
             #print(distance)
             if distance <= dis_threshold:
                 inliers.append(i)
@@ -136,7 +142,7 @@ def RANSAC(pts1, pts2, dis_threshold, N, Ninl=0.99):
     pts1_in = pts1[best_inliers]
     pts2_in = pts2[best_inliers]
     H = my_homography(pts1_in[:,0], pts2_in[:,0])
-
+    print(H)
     return H #, pts1_in, pts2_in
 
 
