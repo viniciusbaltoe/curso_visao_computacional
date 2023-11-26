@@ -1,19 +1,15 @@
 # TRABALHO 2 DE VISÃO COMPUTACIONAL
 # Nome: Vinícius Breda Altoé e Lázaro Villela
-
-# Importa as bibliotecas necessárias
-# Acrescente qualquer outra que quiser
 import numpy as np
 import matplotlib.pyplot as plt
-import math
 import cv2 as cv
 
-
-########################################################################################################################
+###############################################################################
 # Função para normalizar pontos
 # Entrada: points (pontos da imagem a serem normalizados)
 # Saída: norm_points (pontos normalizados)
 #        T (matriz de normalização)
+
 def normalize_points(points):
     # Calcula as médias das coordenadas x e y
     mean_x = np.mean(points[0])
@@ -51,10 +47,18 @@ def construct_A(pts1, pts2):
         matrices.append(A_partial)
     return np.concatenate(matrices)
 
-# Função do DLT Normalizado
-# Entrada: pts1, pts2 (pontos "pts1" da primeira imagem e pontos "pts2" da segunda imagem que atendem a pts2=H.pts1)
-# Saída: H_matrix (matriz de homografia estimada)
+
 def compute_normalized_dlt(pts1, pts2):
+    """ Função do DLT Normalizado
+
+    Recebe pontos "pts1" da primeira imagem e pontos "pts2" da segunda imagem que atendem a pts2=H.pts1
+    Entrada:
+        pts1,
+        pts2
+    Saída:
+        H_matrix (matriz de homografia estimada)
+    """
+
     # Add homogeneous coordinates
     pts1_ = pts1.T
     pts1_ = np.vstack((pts1_, np.ones(pts1_.shape[1])))
@@ -68,15 +72,15 @@ def compute_normalized_dlt(pts1, pts2):
     u, s, vt = np.linalg.svd(A)
 
     # Reshape last column of V as the homography matrix
-    H_matrix = vt[-1].reshape((3,3))
+    H_matrix = vt[-1].reshape((3, 3))
     return H_matrix
 
 # Função do RANSAC
 # Entradas:
 # pts1: pontos da primeira imagem
-# pts2: pontos da segunda imagem 
+# pts2: pontos da segunda imagem
 # dis_threshold: limiar de distância a ser usado no RANSAC
-# N: número máximo de iterações (pode ser definido dentro da função e deve ser atualizado 
+# N: número máximo de iterações (pode ser definido dentro da função e deve ser atualizado
 #    dinamicamente de acordo com o número de inliers/outliers)
 # Ninl: limiar de inliers desejado (pode ser ignorado ou não - fica como decisão de vocês)
 # Saídas:
@@ -149,7 +153,7 @@ def RANSAC(pts1, pts2, dis_threshold, N, Ninl):
 
 MIN_MATCH_COUNT = 10
 img1 = cv.imread('monalisa01_1.jpg', 0)   # queryImage
-img2 = cv.imread('monalisa01_2.jpg', 0)        # trainImage
+img2 = cv.imread('monalisa01_2.jpg', 0)   # trainImage
 
 # Inicialização do SIFT
 sift = cv.SIFT_create()
@@ -173,34 +177,39 @@ for m, n in matches:
 if len(good) > MIN_MATCH_COUNT:
     src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1, 1, 2)
     dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1, 1, 2)
-    
+
     #################################################
     M, pts_1_in, pts_2_in = RANSAC(src_pts, dst_pts, 5, 100, 0.99) # 0.99 foi sugerido pela professora.
     #################################################
 
-    img4 = cv.warpPerspective(img1, M, (img2.shape[1], img2.shape[0])) 
+    img4 = cv.warpPerspective(img1, M, (img2.shape[1], img2.shape[0]))
 
 else:
-    print("Not enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT))
+    print(f"Not enough matches are found - {len(good)}/{MIN_MATCH_COUNT}")
     matchesMask = None
 
-draw_params = dict(matchColor = (0,255,0), # draw matches in green color
-                   singlePointColor = None,
-                   flags = 2)
+draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
+                   singlePointColor=None,
+                   flags=2)
+
 img3 = cv.drawMatches(img1, kp1, img2, kp2, good, None, **draw_params)
 
-fig, axs = plt.subplots(2, 2, figsize=(30, 15))
-fig.add_subplot(2, 2, 1)
-plt.imshow(img3, 'gray')
-fig.add_subplot(2, 2, 2)
-plt.title('Primeira imagem')
-plt.imshow(img1, 'gray')
-fig.add_subplot(2, 2, 3)
-plt.title('Segunda imagem')
-plt.imshow(img2, 'gray')
-fig.add_subplot(2, 2, 4)
-plt.title('Primeira imagem após transformação')
-plt.imshow(img4, 'gray')
-plt.show()
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(30, 15))
+plt.title("Estimativa de Homografia")
 
-########################################################################################################################
+ax1 = plt.subplot(2, 2, 1)
+plt.imshow(img3, 'gray')
+
+ax2 = plt.subplot(2, 2, 2)
+ax2.set_title('Primeira imagem')
+plt.imshow(img1, 'gray')
+
+ax3 = plt.subplot(2, 2, 3)
+ax3.set_title('Segunda imagem')
+plt.imshow(img2, 'gray')
+
+ax4 = plt.subplot(2, 2, 4)
+ax4.set_title('Primeira imagem após transformação')
+plt.imshow(img4, 'gray')
+
+plt.show()
